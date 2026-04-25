@@ -1,0 +1,42 @@
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  height: var(--nav-height);
+  background: rgba(8,12,20,0.7);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+  transition: all 0.3s;
+}
+.scrolled { background: rgba(8,12,20,0.96); box-shadow: 0 4px 30px rgba(0,0,0,0.5); }
+.inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 100%; display: flex; align-items: center; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; flex-shrink: 0; }
+.brandIcon { font-size: 1.3rem; }
+.brandText { background: linear-gradient(135deg,#f97316,#fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.links { display: flex; align-items: center; gap: 4px; flex: 1; }
+.link { padding: 7px 14px; border-radius: var(--radius-sm); color: var(--text-2); font-size: 0.9rem; font-weight: 500; transition: all 0.2s; }
+.link:hover { color: var(--text); background: var(--surface); }
+.actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.userMenu { position: relative; }
+.avatarBtn { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 40px; padding: 5px 13px 5px 5px; cursor: pointer; color: var(--text-2); font-family: var(--font-body); font-size: 0.875rem; transition: all 0.2s; }
+.avatarBtn:hover { border-color: var(--border-hover); color: var(--text); }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: white; flex-shrink: 0; }
+.userName { font-weight: 500; }
+.dropdown { position: absolute; top: calc(100% + 10px); right: 0; width: 240px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; z-index: 200; animation: fadeIn 0.15s ease; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.dropHeader { padding: 16px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+.dropName { font-weight: 600; color: var(--text); font-size: 0.9rem; }
+.dropEmail { font-size: 0.78rem; color: var(--text-3); margin-top: 2px; margin-bottom: 8px; }
+.dropLinks { padding: 8px; }
+.dropItem { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--text-2); font-size: 0.875rem; transition: all 0.15s; width: 100%; background: none; border: none; cursor: pointer; font-family: var(--font-body); }
+.dropItem:hover { background: var(--surface-2); color: var(--text); }
+.danger { color: var(--danger) !important; }
+.danger:hover { background: rgba(239,68,68,0.1) !important; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+.mobileToggle { display: none; background: none; border: none; color: var(--text-2); cursor: pointer; padding: 6px; }
+.mobileMenu { display: flex; flex-direction: column; background: var(--bg-2); border-top: 1px solid var(--border); }
+.mobileLink { padding: 12px 24px; color: var(--text-2); font-size: 0.95rem; transition: background 0.2s; display: block; }
+.mobileLink:hover { background: var(--surface); color: var(--text); }
+@media (max-width: 768px) {
+  .links { display: none; }
+  .mobileToggle { display: flex; }
+  .userName { display: none; }
+}
