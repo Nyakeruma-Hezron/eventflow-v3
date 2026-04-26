@@ -6,6 +6,11 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    // Add the lines below
+    allowedHosts: [
+      'comrade.name.ng',
+      '.comrade.name.ng'
+    ],
     proxy: {
       '/api': {
         target: 'http://backend:8000',
