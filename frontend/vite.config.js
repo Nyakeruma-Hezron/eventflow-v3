@@ -8,8 +8,8 @@ export default defineConfig({
     host: true,
     // Add the lines below
     allowedHosts: [
-      'comrade.name.ng',
-      '.comrade.name.ng'
+      'campustalent.name.ng',
+      '.campustalent.name.ng'
     ],
     proxy: {
       '/api': {
