@@ -1,0 +1,51 @@
+name: CI/CD Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS over SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            export DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            export REPO_URL="git@github.com:${{ github.repository }}.git"
+            export BRANCH_NAME="main"
+
+            if [ -z "$DEPLOY_PATH" ]; then
+              echo "ERROR: DEPLOY_PATH secret is not set."
+              exit 1
+            fi
+
+            mkdir -p "$DEPLOY_PATH"
+            cd "$DEPLOY_PATH"
+
+            if [ ! -d ".git" ]; then
+              echo "Cloning repository to deployment path..."
+              git clone -b "$BRANCH_NAME" "$REPO_URL" .
+            else
+              echo "Updating repository on VPS..."
+              git fetch origin "$BRANCH_NAME"
+              git reset --hard "origin/$BRANCH_NAME"
+              git clean -fd
+            fi
+
+            echo "Building and deploying Docker images..."
+            docker compose pull || true
+            docker compose up -d --build --remove-orphans
+
+            echo "Deployment complete."
