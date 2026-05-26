@@ -10,7 +10,7 @@ export default function BecomeOrganizerPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  if (user?.is_organizer) { navigate('/organizer/dashboard'); return null }
+  if (user?.is_verified_organizer) { navigate('/organizer/dashboard'); return null }
 
   const set = (k) => (e) => setForm({...form, [k]: e.target.value})
 
