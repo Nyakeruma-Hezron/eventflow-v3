@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Say Hello
-        run: echo "GitHub Actions is successfully running!"
+        run: echo "GitHub Actions is successfully running"
