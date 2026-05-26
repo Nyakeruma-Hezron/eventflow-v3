@@ -1,21 +1,63 @@
-name: CI/CD Deploy to VPS
+name: CI/CD Pipeline Build & Deploy
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-  
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: nyakeruma-hezron/eventflow-v3
+
 jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+
+      - name: Build and Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
+
+      - name: Build and Push Proxy
+        uses: docker/build-push-action@v5
+        with:
+          context: ./nginx
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-proxy:latest
+
   deploy:
+    name: Deploy to VPS
+    needs: build-and-push
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Deploy to VPS over SSH
-        uses: appleboy/ssh-action@v0.1.10
+      - name: Execute Deployment over SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -23,30 +65,22 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-            export DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
-            export REPO_URL="git@github.com:${{ github.repository }}.git"
-            export BRANCH_NAME="main"
-
-            if [ -z "$DEPLOY_PATH" ]; then
-              echo "ERROR: DEPLOY_PATH secret is not set."
-              exit 1
-            fi
-
-            mkdir -p "$DEPLOY_PATH"
-            cd "$DEPLOY_PATH"
-
-            if [ ! -d ".git" ]; then
-              echo "Cloning repository to deployment path..."
-              git clone -b "$BRANCH_NAME" "$REPO_URL" .
-            else
-              echo "Updating repository on VPS..."
-              git fetch origin "$BRANCH_NAME"
-              git reset --hard "origin/$BRANCH_NAME"
-              git clean -fd
-            fi
-
-            echo "Building and deploying Docker images..."
-            docker compose pull || true
-            docker compose up -d --build --remove-orphans
-
-            echo "Deployment complete."
+            cd /home/hezron/eventflow-v3
+            
+            echo "Pulling latest configuration files..."
+            git fetch origin main
+            git reset --hard origin/main
+            
+            echo "Authenticating with GHCR..."
+            # Note: secrets.GITHUB_TOKEN expires when the job finishes. 
+            # You MUST use a long-lived Personal Access Token (CR_PAT) here for the VPS to authenticate.
+            echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            echo "Pulling latest images..."
+            docker compose pull
+            
+            echo "Restarting services..."
+            docker compose up -d --remove-orphans
+            
+            echo "Cleaning up old images to free up space..."
+            docker image prune -af
