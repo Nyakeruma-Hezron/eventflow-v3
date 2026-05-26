@@ -1,0 +1,39 @@
+name: CI Test and Auto-Merge
+
+on:
+  push:
+    branches-ignore:
+      - main           # Don't run this on main
+      - 'release/**'   # Ignore release branches
+      - 'hotfix/**'    # Ignore hotfix branches
+
+jobs:
+  test-and-merge:
+    runs-on: ubuntu-latest
+    # Required permissions to create and merge Pull Requests
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- ADD YOUR TESTS HERE ---
+      # Example: Just checking if the Docker compose builds successfully
+      - name: Test Docker Build
+        run: docker compose build
+
+      # --- AUTO MERGE LOGIC ---
+      - name: Create PR and Auto-Merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 1. Create a Pull Request (or ignore if one already exists for this branch)
+          gh pr create --base main \
+                       --head "${{ github.ref_name }}" \
+                       --title "Auto-Merge: ${{ github.ref_name }}" \
+                       --body "Automated Pull Request created by CI/CD pipeline." || echo "PR already exists"
+          
+          # 2. Tell GitHub to automatically merge this PR 
+          gh pr merge "${{ github.ref_name }}" --merge --auto

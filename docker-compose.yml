@@ -12,8 +12,6 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     volumes:
       - mysql_data:/var/lib/mysql
-    ports:
-      - "3306:3306"   # Optional: remove in production if you do not need external access
     networks:
       - eventflow_net
     healthcheck:
@@ -34,11 +32,9 @@ services:
       MYSQL_HOST: db
       MYSQL_PORT: 3306
     volumes:
-      - ./backend:/app
+      # Removed ./backend:/app so it uses the baked-in code from the build
       - media_files:/app/media
       - static_files:/app/staticfiles
-    ports:
-      - "8001:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -48,8 +44,10 @@ services:
       sh -c "
         python manage.py migrate &&
         python manage.py collectstatic --noinput &&
-        python manage.py runserver 0.0.0.0:8000
-      "
+        python manage.py runserver 0.0.0.0:8000 
+      " 
+      # Note: For strict production, consider replacing 'runserver' with Gunicorn:
+      # gunicorn core.wsgi:application --bind 0.0.0.0:8000
 
   frontend:
     build:
@@ -58,11 +56,7 @@ services:
     container_name: eventflow_frontend
     restart: unless-stopped
     env_file: .env
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    ports:
-      - "5173:5173"
+    # Removed ./frontend:/app and node_modules mappings
     depends_on:
       - backend
     networks:
