@@ -8,6 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  # Must be strictly lowercase for Docker tags
   IMAGE_NAME: nyakeruma-hezron/eventflow-v3
 
 jobs:
@@ -72,8 +73,6 @@ jobs:
             git reset --hard origin/main
             
             echo "Authenticating with GHCR..."
-            # Note: secrets.GITHUB_TOKEN expires when the job finishes. 
-            # You MUST use a long-lived Personal Access Token (CR_PAT) here for the VPS to authenticate.
             echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             echo "Pulling latest images..."
