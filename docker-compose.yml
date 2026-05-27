@@ -88,7 +88,7 @@ services:
       - grafana_data:/var/lib/grafana
     environment:
       # Set your initial admin password here
-      - GF_SECURITY_ADMIN_PASSWORD=SuperSecurePassword123! 
+      - GF_SECURITY_ADMIN_PASSWORD=@hez_ron3 
       # Critical: Tell Grafana it lives under a subpath behind a proxy
       - GF_SERVER_DOMAIN=nyx.name.ng
       - GF_SERVER_ROOT_URL=https://nyx.name.ng/grafana/
