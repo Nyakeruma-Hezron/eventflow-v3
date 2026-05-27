@@ -39,7 +39,8 @@ export default function Navbar() {
 
         <div className={styles.links}>
           <Link to="/events" className={styles.link}>Explore</Link>
-          {user?.is_organizer && <>
+          {/* FIXED: is_organizer changed to is_verified_organizer */}
+          {user?.is_verified_organizer && <>
             <Link to="/organizer/dashboard" className={styles.link}>Dashboard</Link>
             <Link to="/events/create" className={styles.link}>+ Create</Link>
           </>}
@@ -57,10 +58,12 @@ export default function Navbar() {
                 <div className={styles.dropHeader}>
                   <div className={styles.dropName}>{user?.first_name} {user?.last_name}</div>
                   <div className={styles.dropEmail}>{user?.email}</div>
+                  {/* It is fine to check role='organizer' here since the backend explicitly sends it */}
                   <span className={`badge badge-${user?.role === 'organizer' ? 'primary' : 'info'}`}>{user?.role}</span>
                 </div>
                 <div className={styles.dropLinks}>
-                  {user?.is_organizer ? <>
+                  {/* FIXED: is_organizer changed to is_verified_organizer */}
+                  {user?.is_verified_organizer ? <>
                     <Link to="/organizer/dashboard" className={styles.dropItem}><LayoutDashboard size={15} /> Organizer Dashboard</Link>
                     <Link to="/events/create" className={styles.dropItem}><Plus size={15} /> Create Event</Link>
                   </> : <>
@@ -84,7 +87,8 @@ export default function Navbar() {
       {menuOpen && (
         <div className={styles.mobileMenu}>
           <Link to="/events" className={styles.mobileLink}>Explore Events</Link>
-          {user?.is_organizer ? <>
+          {/* FIXED: is_organizer changed to is_verified_organizer */}
+          {user?.is_verified_organizer ? <>
             <Link to="/organizer/dashboard" className={styles.mobileLink}>Dashboard</Link>
             <Link to="/events/create" className={styles.mobileLink}>+ Create Event</Link>
           </> : <>
