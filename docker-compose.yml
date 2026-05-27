@@ -79,7 +79,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-    # NO ports exposed!
+    
     restart: unless-stopped
     networks:
       - eventflow_net
@@ -94,12 +94,55 @@ services:
       - GF_SERVER_DOMAIN=${GRAFANA_DOMAIN}
       - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL}
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
-    # NO ports exposed!
+    
     restart: unless-stopped
     depends_on:
       - prometheus
     networks:
       - eventflow_net  
+  # 1. Server Metrics (CPU, RAM, Disk)
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - eventflow_net
+    restart: unless-stopped
+
+  # 2. Container Metrics (Docker performance)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - eventflow_net
+    restart: unless-stopped
+
+  # 3. Database Metrics (MySQL instead of Postgres)
+  mysql-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysql-exporter
+    environment:
+      # Reads your existing database credentials from your .env file
+      DATA_SOURCE_NAME=root:${MYSQL_ROOT_PASSWORD}@(db:3306)/
+    networks:
+      - eventflow_net
+    depends_on:
+      - db
+    restart: unless-stopped    
 volumes:
   mysql_data:
   media_files:
