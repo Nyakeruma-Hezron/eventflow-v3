@@ -136,8 +136,7 @@ services:
     image: prom/mysqld-exporter:latest
     container_name: mysql-exporter
     environment:
-      # Reads your existing database credentials from your .env file
-      DATA_SOURCE_NAME=root:${MYSQL_ROOT_PASSWORD}@(db:3306)/
+      DATA_SOURCE_NAME: "root:${MYSQL_ROOT_PASSWORD}@(db:3306)/"
     networks:
       - eventflow_net
     depends_on:
