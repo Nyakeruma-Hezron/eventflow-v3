@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { usersAPI } from '../services/api'
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { usersAPI } from '../services/api';
 
 export default function BecomeOrganizerPage() {
   const { user, updateUser } = useAuth()
