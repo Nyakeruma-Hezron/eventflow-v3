@@ -1,277 +1,42 @@
-# ⚡ EventFlow v3 — Full-Stack Event Booking Platform
-
-A modern, production-ready event booking platform with separate **Frontend**, **Backend**, and **Database** layers, fully containerized with Docker.
-
-## 🏗️ Architecture
-
-```
-eventflow_v3/
-├── backend/          # Django REST API
-├── frontend/         # React 18 + Vite SPA
-├── database/         # MySQL init scripts
-├── nginx/            # Reverse proxy config
+⚡ EventFlowA highly scalable, full-stack event management and ticketing platform designed for the Kenyan ecosystem.EventFlow simplifies the complete lifecycle of event management. Built with a modern, decoupled architecture, it offers seamless user authentication via Google OAuth, dynamic role-based access control (User vs. Organizer), real-time ticket generation, and integrated mobile money payments via Safaricom's M-Pesa Daraja API.✨ Key FeaturesRole-Based Workflows: Distinct dashboards and permissions for standard users (attendees) and verified organizers.Modern Authentication: Secure JWT-based authentication coupled with Google Identity Services (OAuth 2.0).Frictionless Payments: Native integration with Safaricom M-Pesa (STK Push) for instant mobile checkout and automated callback processing.Full-Stack Observability: Integrated Prometheus & Grafana stack for real-time tracking of HTTP requests, database queries, and system health.Containerized Infrastructure: Fully Dockerized environments (Frontend, Backend, Database, Reverse Proxy, Telemetry) ensuring parity across development and production.🏗️ Architecture & Tech StackEventFlow utilizes a decoupled micro-service approach, reverse-proxied through Nginx for routing and security.🛠 Technology StackLayerTechnologyFrontendReact 18, Vite, React Router v6, AxiosBackend APIDjango 4.2, Django REST Framework (DRF)DatabaseMySQL 8.0AuthenticationSimpleJWT + Google OAuth 2.0 (ID Token Verification)Payments IntegrationSafaricom M-Pesa Daraja APITelemetry & MonitoringPrometheus, Grafana, django-prometheusInfrastructure & DevOpsDocker, Docker Compose, Nginx📂 System TopologyPlaintexteventflow_v3/
+├── backend/          # Django REST API (Business logic & Models)
+├── frontend/         # React SPA (Client interface)
+├── database/         # MySQL persistence layer
+├── nginx/            # Reverse proxy & routing configurations
+├── monitoring/       # Prometheus config & Grafana provisioning
 ├── docker-compose.yml
 └── .env
-```
+🚀 Quick Start (Development Environment)PrerequisitesDocker Desktop installed and runningGit1. Clone & ConfigureBashgit clone https://github.com/yourusername/eventflow.git
+cd eventflow
+cp .env.example .env
+2. Environment VariablesPopulate the newly created .env file with your specific credentials:Code snippet# Database
+MYSQL_DATABASE=eventflow
+MYSQL_USER=eventflow_user
+MYSQL_PASSWORD=secure_password
+MYSQL_ROOT_PASSWORD=secure_root_password
 
-## 🛠 Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 18, Vite, React Router v6 |
-| Backend | Django 4.2, Django REST Framework |
-| Auth | JWT (SimpleJWT) + Google OAuth (ID token verification) |
-| Database | MySQL 8.0 |
-| Payments | Safaricom M-Pesa Daraja API (STK Push) |
-| Proxy | Nginx |
-| DevOps | Docker + Docker Compose |
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Docker Desktop installed and running
-- Git
-
-### 1. Clone and configure
-```bash
-git clone <your-repo>
-cd eventflow_v3
-cp .env .env.local   # Keep a backup
-```
-
-### 2. Add your credentials to `.env`
-```
+# Authentication
 GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+
+# Payments
+MPESA_ENVIRONMENT=sandbox
 MPESA_CONSUMER_KEY=your_key
 MPESA_CONSUMER_SECRET=your_secret
-```
+MPESA_PASSKEY=your_passkey
+MPESA_SHORTCODE=174379
 
-### 3. Start everything
-```bash
-docker compose up --build
-```
-
-First run takes 3–5 minutes (downloads images, installs packages).
-
-### 4. Set up the database
-```bash
-# In a new terminal:
-docker compose exec backend python manage.py migrate
+# Telemetry
+GRAFANA_ADMIN_PASSWORD=your_secure_password
+3. Build & Initialize ContainersBashdocker compose up --build -d
+(Note: Initial build will take a few minutes as it pulls base images and resolves dependencies).4. Database Migrations & SetupRun the following commands to apply the database schema and create an administrative user:Bashdocker compose exec backend python manage.py migrate
 docker compose exec backend python manage.py createsuperuser
-```
-
-### 5. Open the app
-
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8000/api |
-| Django Admin | http://localhost:8000/admin |
-| Via Nginx | http://localhost |
-
----
-
-## 🔑 Google OAuth Setup
-
-1. Go to [console.cloud.google.com](https://console.cloud.google.com)
-2. Create a project → Enable "Google Identity"
-3. OAuth Consent Screen → External → Fill details
-4. Credentials → Create OAuth 2.0 Client ID → Web application
-5. Add Authorized JavaScript Origins:
-   ```
-   http://localhost:5173
-   http://localhost
-   ```
-6. Add Authorized Redirect URIs:
-   ```
-   http://localhost:5173
-   ```
-   > React handles the redirect — no backend callback needed with the ID token approach
-7. Copy Client ID and Secret to `.env`
-
-### How Google Auth Works (v3 approach)
-Unlike the old approach (allauth redirects), v3 uses **Google Identity Services**:
-```
-User clicks "Sign in with Google"
-  → Google pops up, user signs in
-  → Google returns an ID token to the browser
-  → Frontend sends token to /api/auth/google/
-  → Backend verifies token using google-auth library
-  → Backend returns JWT tokens
-  → Frontend stores JWT and user is logged in
-```
-This is simpler, faster, and works perfectly with a React SPA.
-
----
-
-## 📡 API Endpoints
-
-### Auth
-```
-POST   /api/auth/login/              Email + password login → JWT
-POST   /api/auth/registration/       Register new user → JWT
-POST   /api/auth/google/             Google ID token → JWT
-POST   /api/auth/logout/             Invalidate refresh token
-POST   /api/auth/token/refresh/      Get new access token
-```
-
-### Users
-```
-GET    /api/users/me/                Get current user profile
-PATCH  /api/users/me/                Update profile
-POST   /api/users/become-organizer/  Upgrade to organizer role
-```
-
-### Events
-```
-GET    /api/events/                  List events (filterable)
-POST   /api/events/                  Create event (organizer only)
-GET    /api/events/featured/         Featured events
-GET    /api/events/my-events/        Organizer's own events
-GET    /api/events/categories/       List categories
-GET    /api/events/venues/           List venues
-GET    /api/events/{slug}/           Event detail
-PATCH  /api/events/{slug}/           Update event (organizer only)
-DELETE /api/events/{slug}/           Cancel event (organizer only)
-POST   /api/events/{slug}/tickets/   Add ticket type
-```
-
-### Bookings
-```
-GET    /api/bookings/                My bookings
-POST   /api/bookings/create/         Create booking
-GET    /api/bookings/{ref}/          Booking detail
-POST   /api/bookings/{ref}/cancel/   Cancel booking
-```
-
-### Payments
-```
-POST   /api/payments/initiate/           Start M-Pesa STK Push
-GET    /api/payments/status/{id}/        Check payment status
-POST   /api/payments/mpesa/callback/     M-Pesa webhook (Safaricom)
-```
-
----
-
-## 🔧 Development Commands
-
-```bash
-# Start all services
-docker compose up
-
-# Run in background
-docker compose up -d
-
-# View logs
-docker compose logs -f backend
-docker compose logs -f frontend
-
-# Run Django management commands
-docker compose exec backend python manage.py migrate
-docker compose exec backend python manage.py createsuperuser
-docker compose exec backend python manage.py shell
-
-# Install new Python package
-docker compose exec backend pip install <package>
-# Then add to backend/requirements.txt
-
-# Install new npm package
-docker compose exec frontend npm install <package>
-
-# Rebuild a single service
-docker compose up --build backend
-
-# Stop everything
-docker compose down
-
-# Stop and remove all data (fresh start)
-docker compose down -v
-```
-
----
-
-## 📁 Project Structure Details
-
-### Backend (`/backend`)
-```
-backend/
-├── eventflow/          # Django project config
-│   ├── settings.py     # All settings
-│   └── urls.py         # Root URL config
-├── apps/
-│   ├── users/          # Custom user model, Google auth, JWT
-│   ├── events/         # Event CRUD, categories, venues
-│   ├── bookings/       # Booking engine, QR codes
-│   └── payments/       # M-Pesa Daraja integration
-├── Dockerfile
-└── requirements.txt
-```
-
-### Frontend (`/frontend`)
-```
-frontend/
-├── src/
-│   ├── components/
-│   │   ├── auth/       # GoogleButton
-│   │   └── common/     # Navbar, EventCard, LoadingScreen
-│   ├── context/
-│   │   └── AuthContext.jsx   # JWT auth state + Google login
-│   ├── pages/          # All page components
-│   ├── services/
-│   │   └── api.js      # Axios with JWT interceptors
-│   └── styles/
-│       └── global.css  # Design system
-├── public/
-│   └── index.html      # Loads Google Identity Services script
-├── Dockerfile
-├── vite.config.js
-└── package.json
-```
-
----
-
-## 🌐 Production Deployment
-
-To deploy to a VPS/cPanel:
-
-1. Build the frontend:
-   ```bash
-   cd frontend && npm run build
-   ```
-   Deploy `dist/` folder to your static file server.
-
-2. Configure backend environment:
-   ```
-   DEBUG=False
-   ALLOWED_HOSTS=yourdomain.com
-   MYSQL_HOST=localhost   # (not 'db' in production)
-   ```
-
-3. Update Google OAuth in Google Console:
-   - Add production domain to Authorized Origins
-   - Update `VITE_GOOGLE_CLIENT_ID` in frontend `.env`
-
-4. Update M-Pesa:
-   ```
-   MPESA_ENVIRONMENT=production
-   MPESA_SHORTCODE=your_real_shortcode
-   MPESA_CALLBACK_URL=https://yourdomain.com/api/payments/mpesa/callback/
-   ```
-
----
-
-## 🔐 Security Notes
-
-- Never commit `.env` to version control — it's in `.gitignore`
-- Change all default passwords before production
-- Set `DEBUG=False` in production
-- Use HTTPS in production (SSL required for M-Pesa callbacks)
-- Rotate `SECRET_KEY` in production
-
----
-
-Built with ❤️ for the Kenyan events ecosystem.
+5. Access the PlatformServiceLocal URLFrontend Applicationhttp://localhost:5173Backend APIhttp://localhost:8000/apiDjango Admin Panelhttp://localhost:8000/adminGrafana Dashboardhttp://localhost/grafana/ (If Nginx configured)📡 Core API EndpointsThe API is structured around RESTful principles. Below is a high-level overview of the primary modules.Authentication (/api/auth/)POST /login/ - Standard Email/Password login (Returns JWT)POST /registration/ - Create a new user accountPOST /google/ - Verifies Google ID token and issues system JWTPOST /token/refresh/ - Refresh expired access tokensEvent Management (/api/events/)GET / - List and filter public eventsPOST / - Create a new event (Requires Verified Organizer Role)GET /{slug}/ - Retrieve deep event detailsPOST /{slug}/tickets/ - Define ticket tiers for an eventBooking & Ticketing (/api/bookings/)POST /create/ - Reserve ticketsGET / - Retrieve current user's booking historyGET /{ref}/ - Booking details and QR validation dataPayment Processing (/api/payments/)POST /initiate/ - Triggers M-Pesa STK push to the user's phonePOST /mpesa/callback/ - Webhook endpoint for Safaricom transaction confirmation🔑 Authentication Flow (Google OAuth)EventFlow utilizes Google Identity Services alongside a custom JWT implementation for a seamless, SPA-friendly auth flow:Client interacts with the Google Sign-In widget.Google authenticates the user and returns a secure ID Token directly to the React frontend.React securely transmits this token to the backend (/api/auth/google/).Django validates the cryptographic signature of the token against Google's public keys.Upon verification, Django creates (or retrieves) the user and issues standard Access and Refresh JWTs.The frontend stores these tokens to authorize subsequent API requests.🔧 Developer Workflow & CommandsManage Containers:Bashdocker compose up -d        # Start detached
+docker compose down         # Stop containers
+docker compose down -v      # Stop containers and wipe volumes (Hard Reset)
+View Live Logs:Bashdocker compose logs -f backend
+docker compose logs -f nginx
+Execute Backend Commands:Bashdocker compose exec backend python manage.py shell
+docker compose exec backend pip install <package_name>
+🌐 Production ConsiderationsWhen deploying to a production environment (VPS / Cloud Provider), ensure the following:Security Settings: Set DEBUG=False and configure secure ALLOWED_HOSTS and CSRF_TRUSTED_ORIGINS.Reverse Proxy: Configure Nginx to enforce SSL/TLS (HTTPS). Note: Safaricom M-Pesa callbacks require a valid HTTPS endpoint.Secrets Management: Keep the .env file strictly out of version control. Rotate the Django SECRET_KEY and database credentials.Static Assets: Build the React frontend (npm run build) and serve the static files via Nginx or a CDN, rather than the Vite development server.Designed & Engineered by [Your Name / Alias] — [Portfolio Link / LinkedIn]

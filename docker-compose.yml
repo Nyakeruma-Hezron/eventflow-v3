@@ -90,11 +90,9 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     environment:
-      # Set your initial admin password here
-      - GF_SECURITY_ADMIN_PASSWORD=@hez_ron3 
-      # Critical: Tell Grafana it lives under a subpath behind a proxy
-      - GF_SERVER_DOMAIN=nyx.name.ng
-      - GF_SERVER_ROOT_URL=https://nyx.name.ng/grafana/
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SERVER_DOMAIN=${GRAFANA_DOMAIN}
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL}
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     # NO ports exposed!
     restart: unless-stopped
