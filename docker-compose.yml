@@ -69,11 +69,40 @@ services:
       - frontend
     networks:
       - eventflow_net
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    # NO ports exposed!
+    restart: unless-stopped
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      # Set your initial admin password here
+      - GF_SECURITY_ADMIN_PASSWORD=SuperSecurePassword123! 
+      # Critical: Tell Grafana it lives under a subpath behind a proxy
+      - GF_SERVER_DOMAIN=nyx.name.ng
+      - GF_SERVER_ROOT_URL=https://nyx.name.ng/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    # NO ports exposed!
+    restart: unless-stopped
+    depends_on:
+      - prometheus
 volumes:
   mysql_data:
   media_files:
   static_files:
+  prometheus_data:
+  grafana_data:
 
 networks:
   eventflow_net:

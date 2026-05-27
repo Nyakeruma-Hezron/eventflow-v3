@@ -26,6 +26,9 @@ urlpatterns = [
     path('api/events/', include('apps.events.urls')),
     path('api/bookings/', include('apps.bookings.urls')),
     path('api/payments/', include('apps.payments.urls')),
+
+    # Prometheus Metrics Endpoint
+    path('', include('django_prometheus.urls')),
 ]
 
 if settings.DEBUG:
