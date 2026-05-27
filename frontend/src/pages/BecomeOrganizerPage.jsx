@@ -4,26 +4,44 @@ import { useAuth } from '../context/AuthContext';
 import { usersAPI } from '../services/api';
 
 export default function BecomeOrganizerPage() {
-  const { user, updateUser } = useAuth()
-  const navigate = useNavigate()
-  const [form, setForm] = useState({ organization_name: '', bio: user?.bio || '', phone: user?.phone || '' })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ 
+    organization_name: '', 
+    bio: user?.bio || '', 
+    phone: user?.phone || '' 
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  if (user?.is_verified_organizer) { navigate('/organizer/dashboard'); return null }
+  // 1. Handle the redirect safely as a side effect
+  useEffect(() => {
+    if (user?.is_verified_organizer) {
+      navigate('/organizer/dashboard');
+    }
+  }, [user, navigate]);
 
-  const set = (k) => (e) => setForm({...form, [k]: e.target.value})
+  // 2. Prevent the component from rendering if they are being redirected
+  if (user?.is_verified_organizer) { 
+    return null; 
+  }
+
+  const set = (k) => (e) => setForm({...form, [k]: e.target.value});
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); setError(''); setLoading(true)
+    e.preventDefault(); 
+    setError(''); 
+    setLoading(true);
     try {
-      const { data } = await usersAPI.becomeOrganizer(form)
-      updateUser(data)
-      navigate('/organizer/dashboard')
+      const { data } = await usersAPI.becomeOrganizer(form);
+      updateUser(data);
+      navigate('/organizer/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed. Please try again.')
-    } finally { setLoading(false) }
-  }
+      setError(err.response?.data?.detail || 'Failed. Please try again.');
+    } finally { 
+      setLoading(false); 
+    }
+  };
 
   return (
     <div className="page-wrapper">
@@ -35,10 +53,18 @@ export default function BecomeOrganizerPage() {
         </div>
 
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px',marginBottom:'36px'}}>
-          {[['💳','M-Pesa Payments','Accept payments directly from attendees via STK Push.'],['📊','Analytics Dashboard','Track bookings, revenue, and attendee data in real time.'],['🎟️','Flexible Tickets','Create multiple ticket types with custom pricing.'],['📧','Auto Notifications','Attendees receive booking confirmations with QR codes.']].map(([icon,title,desc]) => (
+          {[
+            ['💳','M-Pesa Payments','Accept payments directly from attendees via STK Push.'],
+            ['📊','Analytics Dashboard','Track bookings, revenue, and attendee data in real time.'],
+            ['🎟️','Flexible Tickets','Create multiple ticket types with custom pricing.'],
+            ['📧','Auto Notifications','Attendees receive booking confirmations with QR codes.']
+          ].map(([icon,title,desc]) => (
             <div key={title} className="card card-body" style={{display:'flex',gap:'12px',alignItems:'flex-start'}}>
               <span style={{fontSize:'1.3rem',flexShrink:0}}>{icon}</span>
-              <div><strong style={{color:'var(--text)',display:'block',marginBottom:'3px',fontSize:'0.9rem'}}>{title}</strong><span style={{fontSize:'0.82rem',color:'var(--text-3)'}}>{desc}</span></div>
+              <div>
+                <strong style={{color:'var(--text)',display:'block',marginBottom:'3px',fontSize:'0.9rem'}}>{title}</strong>
+                <span style={{fontSize:'0.82rem',color:'var(--text-3)'}}>{desc}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -48,17 +74,28 @@ export default function BecomeOrganizerPage() {
           <div className="card-body">
             {error && <div className="alert alert-error">{error}</div>}
             <form onSubmit={handleSubmit}>
-              <div className="form-group"><label className="form-label">Organization / Business Name *</label><input type="text" className="form-control" value={form.organization_name} onChange={set('organization_name')} placeholder="e.g. Nairobi Events Co." required /></div>
-              <div className="form-group"><label className="form-label">Phone Number *</label><input type="tel" className="form-control" value={form.phone} onChange={set('phone')} placeholder="0712 345 678" required /></div>
-              <div className="form-group"><label className="form-label">About Your Organization</label><textarea className="form-control" value={form.bio} onChange={set('bio')} placeholder="Describe what kind of events you organize…" /></div>
+              <div className="form-group">
+                <label className="form-label">Organization / Business Name *</label>
+                <input type="text" className="form-control" value={form.organization_name} onChange={set('organization_name')} placeholder="e.g. Nairobi Events Co." required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Phone Number *</label>
+                <input type="tel" className="form-control" value={form.phone} onChange={set('phone')} placeholder="0712 345 678" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">About Your Organization</label>
+                <textarea className="form-control" value={form.bio} onChange={set('bio')} placeholder="Describe what kind of events you organize…" />
+              </div>
               <div style={{background:'var(--surface-2)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'14px',marginBottom:'20px',fontSize:'0.875rem',color:'var(--text-2)'}}>
                 By registering, you agree to EventFlow's Terms of Service and Organizer Guidelines.
               </div>
-              <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>{loading ? 'Submitting…' : 'Submit Organizer Application'}</button>
+              <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                {loading ? 'Submitting…' : 'Submit Organizer Application'}
+              </button>
             </form>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
