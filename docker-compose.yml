@@ -81,6 +81,8 @@ services:
       - '--storage.tsdb.path=/prometheus'
     # NO ports exposed!
     restart: unless-stopped
+    networks:
+      - eventflow_net
 
   grafana:
     image: grafana/grafana:latest
