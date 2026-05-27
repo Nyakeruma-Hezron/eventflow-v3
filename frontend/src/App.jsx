@@ -38,7 +38,7 @@ function OrganizerRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
-  if (!user.is_organizer) return <Navigate to="/become-organizer" replace />
+  if (!user.is_verified_organizer) return <Navigate to="/become-organizer" replace />
   return children
 }
 
