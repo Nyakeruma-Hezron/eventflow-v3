@@ -5,6 +5,7 @@ Django REST API — splits frontend/backend/database
 import os
 from pathlib import Path
 from datetime import timedelta
+from celery.schedules import crontab
 from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -90,11 +91,36 @@ DATABASES = {
         'PASSWORD': config('MYSQL_PASSWORD', default='eventflow_pass'),
         'HOST': config('MYSQL_HOST', default='db'),
         'PORT': config('MYSQL_PORT', default='3306'),
+        'CONN_MAX_AGE': config('CONN_MAX_AGE', default=600, cast=int),
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
     }
+}
+
+# ── Cache / Redis ─────────────────────────────────────────────────────────────
+CACHE_TTL = config('CACHE_TTL', default=300, cast=int)
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': config('REDIS_URL', default='redis://redis:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'PASSWORD': config('REDIS_PASSWORD', default=''),
+        },
+        'KEY_PREFIX': 'eventflow',
+    }
+}
+
+# ── Celery / Async Workers ─────────────────────────────────────────────────────
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://redis:6379/0')
+CELERY_BEAT_SCHEDULE = {
+    'flush-event-view-counts-every-minute': {
+        'task': 'apps.events.tasks.flush_event_view_counts',
+        'schedule': 60.0,
+    },
 }
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
@@ -120,6 +146,8 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 12,
+    'PAGE_SIZE_QUERY_PARAM': 'page_size',
+    'MAX_PAGE_SIZE': 100,
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
@@ -174,6 +202,10 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = config('DEBUG', default=True, cast=bool)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+X_FRAME_OPTIONS = 'DENY'
 
 # ── Email ─────────────────────────────────────────────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' if config('DEBUG', default=True, cast=bool) else 'django.core.mail.backends.smtp.EmailBackend'

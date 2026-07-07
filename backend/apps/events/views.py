@@ -5,12 +5,19 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, F
 from django.utils import timezone
+from django.core.cache import cache
 from .models import Event, Category, TicketType, Venue
 from .serializers import (
     EventListSerializer, EventDetailSerializer, EventCreateUpdateSerializer,
     CategorySerializer, TicketTypeSerializer, VenueSerializer
 )
 from .filters import EventFilter
+from .cache_utils import (
+    FEATURED_EVENTS_KEY, CATEGORIES_KEY, VENUES_KEY,
+    get_event_detail_cache_key, invalidate_featured_events_cache,
+    invalidate_categories_cache, invalidate_venues_cache,
+)
+from .counters import increment_event_views
 
 
 class IsOrganizerOrReadOnly(permissions.BasePermission):
@@ -32,11 +39,29 @@ class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.filter(is_active=True)
     permission_classes = [permissions.IsAuthenticated]
 
+    def list(self, request, *args, **kwargs):
+        cache_key = CATEGORIES_KEY
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, timeout=cache.ttl(cache_key) if hasattr(cache, 'ttl') else 300)
+        return response
+
 
 class VenueListView(generics.ListAPIView):
     serializer_class = VenueSerializer
     queryset = Venue.objects.all()
     permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        cache_key = VENUES_KEY
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, timeout=cache.ttl(cache_key) if hasattr(cache, 'ttl') else 300)
+        return response
 
 
 class EventListCreateView(generics.ListCreateAPIView):
@@ -84,10 +109,20 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
         return EventDetailSerializer
 
     def retrieve(self, request, *args, **kwargs):
+        slug = self.kwargs.get('slug')
+        cache_key = get_event_detail_cache_key(slug)
+        cached = cache.get(cache_key)
+        if cached is not None:
+            increment_event_views(slug)
+            return Response(cached)
+
         event = self.get_object()
-        Event.objects.filter(pk=event.pk).update(views_count=F('views_count') + 1)
         serializer = self.get_serializer(event)
-        return Response(serializer.data)
+        data = serializer.data
+        if event.status == Event.Status.PUBLISHED:
+            cache.set(cache_key, data, timeout=300)
+        increment_event_views(slug)
+        return Response(data)
 
     def destroy(self, request, *args, **kwargs):
         event = self.get_object()
@@ -116,6 +151,16 @@ class TicketTypeCreateView(generics.CreateAPIView):
 class FeaturedEventsView(generics.ListAPIView):
     serializer_class = EventListSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        cache_key = FEATURED_EVENTS_KEY
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, timeout=300)
+        return response
 
     def get_queryset(self):
         return Event.objects.filter(

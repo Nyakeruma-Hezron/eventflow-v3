@@ -3,12 +3,14 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenRefreshView
+from .health import health
 
 admin.site.site_header = "EventFlow Admin"
 admin.site.site_title = "EventFlow"
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('health/', health, name='health'),
 
     # JWT Auth
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

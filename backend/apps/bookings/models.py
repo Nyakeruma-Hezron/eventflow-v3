@@ -39,6 +39,7 @@ class Booking(models.Model):
         indexes = [
             models.Index(fields=['user', 'status']),
             models.Index(fields=['event', 'status']),
+            models.Index(fields=['created_at']),
         ]
 
     def save(self, *args, **kwargs):

@@ -23,7 +23,8 @@ class Payment(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
     mpesa_phone = models.CharField(max_length=15, blank=True)
     mpesa_checkout_id = models.CharField(max_length=100, blank=True, db_index=True)
-    mpesa_receipt_number = models.CharField(max_length=50, blank=True)
+    mpesa_receipt_number = models.CharField(max_length=50, blank=True, db_index=True)
+    idempotency_key = models.UUIDField(null=True, blank=True, unique=True, db_index=True)
     gateway_response = models.JSONField(default=dict, blank=True)
     failure_reason = models.TextField(blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
@@ -33,6 +34,11 @@ class Payment(models.Model):
     class Meta:
         db_table = 'payments'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['mpesa_checkout_id']),
+            models.Index(fields=['mpesa_receipt_number']),
+        ]
 
     def __str__(self):
         return f'Payment {self.id} – {self.amount} {self.currency} ({self.status})'

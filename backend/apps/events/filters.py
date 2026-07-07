@@ -4,6 +4,8 @@ from .models import Event
 
 class EventFilter(django_filters.FilterSet):
     category = django_filters.NumberFilter(field_name='category__id')
+    organizer = django_filters.UUIDFilter(field_name='organizer__id')
+    venue_city = django_filters.CharFilter(field_name='venue__city', lookup_expr='iexact')
     is_free = django_filters.BooleanFilter()
     format = django_filters.CharFilter()
     featured = django_filters.BooleanFilter()
@@ -15,4 +17,4 @@ class EventFilter(django_filters.FilterSet):
 
     class Meta:
         model = Event
-        fields = ['category', 'is_free', 'format', 'featured', 'status']
+        fields = ['category', 'organizer', 'venue_city', 'is_free', 'format', 'featured', 'status']

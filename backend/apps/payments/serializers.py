@@ -12,3 +12,4 @@ class PaymentSerializer(serializers.ModelSerializer):
 class InitiatePaymentSerializer(serializers.Serializer):
     booking_reference = serializers.CharField()
     phone = serializers.CharField()
+    idempotency_key = serializers.UUIDField(required=False, allow_null=True)

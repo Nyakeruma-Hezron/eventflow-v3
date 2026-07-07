@@ -99,6 +99,15 @@ class Event(models.Model):
             models.Index(fields=['status', 'start_date']),
             models.Index(fields=['organizer', 'status']),
             models.Index(fields=['featured', 'status']),
+            models.Index(fields=['category', 'status']),
+            models.Index(fields=['venue', 'status']),
+            models.Index(fields=['registration_deadline']),
+            models.Index(fields=['start_date', 'featured']),
+        ]
+        constraints = [
+            models.CheckConstraint(check=models.Q(available_tickets__gte=0), name='event_available_tickets_non_negative'),
+            models.CheckConstraint(check=models.Q(total_capacity__gte=0), name='event_total_capacity_non_negative'),
+            models.CheckConstraint(check=models.Q(bookings_count__gte=0), name='event_bookings_count_non_negative'),
         ]
 
     def save(self, *args, **kwargs):
@@ -146,6 +155,14 @@ class TicketType(models.Model):
 
     class Meta:
         db_table = 'ticket_types'
+        indexes = [
+            models.Index(fields=['event', 'is_active']),
+        ]
+        constraints = [
+            models.CheckConstraint(check=models.Q(quantity__gte=0), name='ticket_quantity_non_negative'),
+            models.CheckConstraint(check=models.Q(quantity_sold__gte=0), name='ticket_quantity_sold_non_negative'),
+            models.CheckConstraint(check=models.Q(quantity__gte=models.F('quantity_sold')), name='ticket_quantity_sold_lte_quantity'),
+        ]
 
     @property
     def quantity_available(self):

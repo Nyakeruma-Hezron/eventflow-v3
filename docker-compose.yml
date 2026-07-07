@@ -21,28 +21,87 @@ services:
       retries: 10
       start_period: 30s
 
+  redis:
+    image: redis:7-alpine
+    container_name: eventflow_redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60 1", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - eventflow_net
+
   backend:
-    image: ghcr.io/nyakeruma-hezron/eventflow-v3-backend:latest
+    build:
+      context: ./backend
+    image: eventflow_backend:latest
     container_name: eventflow_backend
     restart: unless-stopped
     env_file: .env
     environment:
       MYSQL_HOST: db
       MYSQL_PORT: 3306
+      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
     volumes:
       - media_files:/app/media
       - static_files:/app/staticfiles
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - eventflow_net
     command: >
       sh -c "
         python manage.py migrate &&
         python manage.py collectstatic --noinput &&
-        python manage.py runserver 0.0.0.0:8000
+        gunicorn eventflow.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 4 --log-level info
       "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  celery_worker:
+    build:
+      context: ./backend
+    image: eventflow_celery_worker:latest
+    container_name: eventflow_celery_worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      - backend
+      - redis
+    networks:
+      - eventflow_net
+    command: celery -A eventflow worker --loglevel=info --concurrency=2
+
+  celery_beat:
+    build:
+      context: ./backend
+    image: eventflow_celery_beat:latest
+    container_name: eventflow_celery_beat
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      - backend
+      - redis
+    networks:
+      - eventflow_net
+    command: celery -A eventflow beat --loglevel=info
 
   frontend:
     image: ghcr.io/nyakeruma-hezron/eventflow-v3-frontend:latest
@@ -147,6 +206,7 @@ services:
     restart: unless-stopped 
 volumes:
   mysql_data:
+  redis_data:
   media_files:
   static_files:
   prometheus_data:
