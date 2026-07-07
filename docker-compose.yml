@@ -32,9 +32,7 @@ services:
       - eventflow_net
 
   backend:
-    build:
-      context: ./backend
-    image: eventflow_backend:latest
+    image: ghcr.io/nyakeruma-hezron/eventflow-v3-backend:latest
     container_name: eventflow_backend
     restart: unless-stopped
     env_file: .env
@@ -68,9 +66,7 @@ services:
       start_period: 10s
 
   celery_worker:
-    build:
-      context: ./backend
-    image: eventflow_celery_worker:latest
+    image: ghcr.io/nyakeruma-hezron/eventflow-v3-backend:latest
     container_name: eventflow_celery_worker
     restart: unless-stopped
     env_file: .env
@@ -86,9 +82,7 @@ services:
     command: celery -A eventflow worker --loglevel=info --concurrency=2
 
   celery_beat:
-    build:
-      context: ./backend
-    image: eventflow_celery_beat:latest
+    image: ghcr.io/nyakeruma-hezron/eventflow-v3-backend:latest
     container_name: eventflow_celery_beat
     restart: unless-stopped
     env_file: .env
@@ -129,6 +123,7 @@ services:
       - grafana
     networks:
       - eventflow_net
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -138,7 +133,6 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-    
     restart: unless-stopped
     networks:
       - eventflow_net
@@ -153,13 +147,12 @@ services:
       - GF_SERVER_DOMAIN=${GRAFANA_DOMAIN}
       - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL}
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
-    
     restart: unless-stopped
     depends_on:
       - prometheus
     networks:
       - eventflow_net  
-  # 1. Server Metrics (CPU, RAM, Disk)
+
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
@@ -176,7 +169,6 @@ services:
       - eventflow_net
     restart: unless-stopped
 
-  # 2. Container Metrics (Docker performance)
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
@@ -190,7 +182,6 @@ services:
       - eventflow_net
     restart: unless-stopped
 
-  # 3. Database Metrics (MySQL instead of Postgres)
   mysql-exporter:
     image: prom/mysqld-exporter:latest
     container_name: mysql-exporter
@@ -204,6 +195,7 @@ services:
     depends_on:
       - db
     restart: unless-stopped 
+
 volumes:
   mysql_data:
   redis_data:
